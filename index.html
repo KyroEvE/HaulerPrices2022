@@ -53,6 +53,18 @@
         });
       });
 
+      $('#volume').keyup(function(event) {
+        // skip for arrow keys
+        if(event.which >= 37 && event.which <= 40) return;
+        // format number
+        $(this).val(function(index, value) {
+          return value
+          .replace(/\D/g, "")
+          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+          ;
+        });
+      });
+
       $('.output_area').click(function() {
         // Copies price to clipboard when the output area is clicked
         copyTextToClipboard(stuff_to_copy_to_clipboard);
@@ -84,15 +96,22 @@
         $('#jumps_label').addClass('active');
       })
 
+      $('#volume_label').click(function() {
+        $('#volume_label').addClass('active');
+      })
+
       $('html').click(function() {
         // Reward Rates by Rita Jita, site made by Rashad Charante
         var collateral = $('#collateral').val();
         var evepraisal = $('#evepraisal').val();
         var jumps = $('#jumps').val();
+        var volume = $('#volume').val();
+        var volumeModifier = 0;
         // Sanitizes inputs by getting rid of commas and other stuff
         collateral = collateral.replace(/[^\d\.\-\ ]/g, '');
         evepraisal = evepraisal.replace(/[^\d\.\-\ ]/g, '');
         jumps = jumps.replace(/[^\d\.\-\ ]/g, '');
+        volume = volume.replace(/[^\d\.\-\ ]/g, '');
         // Set a basic minimum percentage of the collateral that we will take.
         var baseColPercentage = 0.005;
         // Set a basic pickup fee to this percentage of the collateral
@@ -113,6 +132,16 @@
           return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         }
 
+        // Volume Modifier
+        if (volume > 60000)
+        {
+          volumeModifier = 1.5;
+        }
+        else if (volume <= 60000)
+        {
+          volumeModifier = 1.25;
+        }
+
         // Let's do some magic then
         baseRate = pricePerJump*jumps;
         recommendedCollateral = evepraisal*1.1;
@@ -124,7 +153,7 @@
         
         pickupFee = collateral*baseColPercentage;
         pickupReward = pickupFee*incPerJump^jumps;
-        reward = baseRate+pickupReward;
+        reward = baseRate*volumeModifier+pickupReward;
         
         if (collateral*0.001*jumps > reward) {
             reward = collateral*0.001*jumps;
@@ -135,7 +164,7 @@
         
         // Extra Fees
         if ($('#rush').prop('checked')) {
-          reward = reward * 2;
+          reward = reward * 1.5;
         }
         
         if ($('#lowsec').prop('checked')) {
@@ -188,6 +217,10 @@
                     <div class="input-field col s12">
                       <input id="jumps" type="text" class="validate">
                       <label id="jumps_label" for="jumps"># of Jumps</label>
+                    </div>
+                    <div class="input-field col s12">
+                      <input id="volume" type="text" class="validate">
+                      <label id="volume_label" for="volume">Volume in m3</label>
                     </div>
                   </div>
                 </form>
